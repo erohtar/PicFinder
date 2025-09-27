@@ -151,11 +151,8 @@ class FoldersFragment : Fragment() {
     
     private fun openFolderPicker() {
         try {
-            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-            }
-            folderPickerLauncher.launch(intent)
+            // For now, let's add some common folders manually for testing
+            showFolderSelectionDialog()
         } catch (e: Exception) {
             Toast.makeText(
                 requireContext(),
@@ -163,6 +160,48 @@ class FoldersFragment : Fragment() {
                 Toast.LENGTH_LONG
             ).show()
         }
+    }
+    
+    private fun showFolderSelectionDialog() {
+        val commonFolders = arrayOf(
+            "/storage/emulated/0/Pictures",
+            "/storage/emulated/0/DCIM/Camera",
+            "/storage/emulated/0/Download",
+            "/storage/emulated/0/Pictures/Screenshots",
+            "/storage/emulated/0/WhatsApp/Media/WhatsApp Images",
+            "Custom path..."
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Select Folder")
+            .setItems(commonFolders) { _, which ->
+                if (which == commonFolders.size - 1) {
+                    // Custom path option
+                    showCustomPathDialog()
+                } else {
+                    val selectedPath = commonFolders[which]
+                    viewModel.addFolder(selectedPath)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun showCustomPathDialog() {
+        val editText = android.widget.EditText(requireContext())
+        editText.hint = "/storage/emulated/0/YourFolder"
+        
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Enter Folder Path")
+            .setView(editText)
+            .setPositiveButton("Add") { _, _ ->
+                val path = editText.text.toString().trim()
+                if (path.isNotEmpty()) {
+                    viewModel.addFolder(path)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
     
     private fun handleSelectedFolder(uri: Uri) {
@@ -195,17 +234,37 @@ class FoldersFragment : Fragment() {
     
     private fun getFolderPathFromUri(uri: Uri): String? {
         return try {
-            // This is a simplified approach - in a real app you'd want to handle
-            // document tree URIs more robustly
             val docId = DocumentsContract.getTreeDocumentId(uri)
-            if (docId.startsWith("primary:")) {
-                val path = docId.substring("primary:".length)
-                "/storage/emulated/0/$path"
-            } else {
-                // For external storage or other providers, you'd need more complex handling
-                null
+            when {
+                docId.startsWith("primary:") -> {
+                    val path = docId.substring("primary:".length)
+                    if (path.isEmpty()) {
+                        "/storage/emulated/0"
+                    } else {
+                        "/storage/emulated/0/$path"
+                    }
+                }
+                docId.startsWith("raw:") -> {
+                    // Direct path
+                    docId.substring("raw:".length)
+                }
+                else -> {
+                    // Try to handle other cases
+                    val parts = docId.split(":")
+                    if (parts.size >= 2) {
+                        val storageId = parts[0]
+                        val relativePath = parts[1]
+                        when (storageId) {
+                            "primary" -> "/storage/emulated/0/$relativePath"
+                            else -> "/storage/$storageId/$relativePath"
+                        }
+                    } else {
+                        null
+                    }
+                }
             }
         } catch (e: Exception) {
+            android.util.Log.e("FoldersFragment", "Error converting URI to path: $uri", e)
             null
         }
     }
