@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dark_background"
+    tools:context=".ui.settings.SettingsFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Scan Settings Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/scan_settings"
+            android:textColor="@color/text_primary_dark"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Scan Frequency -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/scan_frequency"
+            android:textColor="@color/text_primary_dark"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/scan_frequency_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/radio_daily"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/daily"
+                android:textColor="@color/text_primary_dark"
+                android:buttonTint="@color/primary_cyan"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/radio_weekly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/weekly"
+                android:textColor="@color/text_primary_dark"
+                android:buttonTint="@color/primary_cyan" />
+
+            <RadioButton
+                android:id="@+id/radio_manual"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/manual_only"
+                android:textColor="@color/text_primary_dark"
+                android:buttonTint="@color/primary_cyan" />
+
+        </RadioGroup>
+
+        <!-- Last Scan -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/last_scan"
+            android:textColor="@color/text_primary_dark"
+            android:textSize="16sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/last_scan_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/never"
+            android:textColor="@color/text_secondary_dark"
+            android:textSize="14sp"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Database Statistics Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/database_statistics"
+            android:textColor="@color/text_primary_dark"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/database_stats_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/images_with_text"
+            android:textColor="@color/text_secondary_dark"
+            android:textSize="16sp"
+            android:layout_marginBottom="24dp"
+            tools:text="2389 images with text in database" />
+
+        <!-- Clear Database Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clear_database_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/clear_database"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/primary_cyan"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Manual Scan Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/manual_scan_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Scan All Folders Now"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/primary_cyan" />
+
+    </LinearLayout>
+
+</ScrollView>
