@@ -12,6 +12,9 @@ interface ImageDao {
     @Query("SELECT * FROM images WHERE folderPath = :folderPath")
     suspend fun getImagesInFolder(folderPath: String): List<ImageEntity>
     
+    @Query("SELECT COUNT(*) FROM images WHERE folderPath = :folderPath")
+    suspend fun getImageCountInFolder(folderPath: String): Int
+    
     @Query("SELECT COUNT(*) FROM images")
     suspend fun getTotalImageCount(): Int
     

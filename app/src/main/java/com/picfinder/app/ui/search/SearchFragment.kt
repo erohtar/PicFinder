@@ -97,9 +97,15 @@ class SearchFragment : Fragment() {
         try {
             val file = File(image.filePath)
             if (file.exists()) {
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    requireContext(),
+                    "${requireContext().packageName}.fileprovider",
+                    file
+                )
+                
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(Uri.fromFile(file), "image/*")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    setDataAndType(uri, "image/*")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
                 }
                 
                 if (intent.resolveActivity(requireContext().packageManager) != null) {
@@ -114,7 +120,7 @@ class SearchFragment : Fragment() {
             } else {
                 Toast.makeText(
                     requireContext(),
-                    "Image file not found",
+                    "Image file not found: ${image.filePath}",
                     Toast.LENGTH_SHORT
                 ).show()
             }

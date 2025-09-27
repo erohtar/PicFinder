@@ -26,6 +26,8 @@ class PicFinderRepository(context: Context) {
     
     suspend fun getImagesInFolder(folderPath: String) = imageDao.getImagesInFolder(folderPath)
     
+    suspend fun getImageCountInFolder(folderPath: String) = imageDao.getImageCountInFolder(folderPath)
+    
     suspend fun getTotalImageCount() = imageDao.getTotalImageCount()
     
     suspend fun getImagesWithTextCount() = imageDao.getImagesWithTextCount()

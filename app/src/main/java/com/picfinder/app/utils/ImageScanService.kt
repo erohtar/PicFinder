@@ -114,14 +114,22 @@ class ImageScanService(private val context: Context) {
                         
                         processedCount++
                         
+                        // Update folder count in real-time every 10 images
+                        if (processedCount % 10 == 0) {
+                            val currentCount = repository.getImageCountInFolder(folderPath)
+                            repository.updateFolderScanInfo(folderPath, System.currentTimeMillis(), currentCount)
+                        }
+                        
                     } catch (e: Exception) {
                         Log.e("ImageScanService", "Error processing image: ${imageFile.absolutePath}", e)
                         processedCount++
                     }
                 }
                 
-                // Update folder scan information
-                repository.updateFolderScanInfo(folderPath, System.currentTimeMillis(), processedCount)
+                // Update folder scan information with actual database count
+                val finalCount = repository.getImageCountInFolder(folderPath)
+                repository.updateFolderScanInfo(folderPath, System.currentTimeMillis(), finalCount)
+                Log.d(TAG, "Updated folder scan info: $folderPath with $finalCount images")
                 
                 _scanProgress.value = ScanProgress.Complete(processedCount, newImagesCount)
                 ScanResult.Success(processedCount, newImagesCount)

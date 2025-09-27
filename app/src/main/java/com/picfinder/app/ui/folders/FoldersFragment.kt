@@ -151,8 +151,11 @@ class FoldersFragment : Fragment() {
     
     private fun openFolderPicker() {
         try {
-            // For now, let's add some common folders manually for testing
-            showFolderSelectionDialog()
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+            }
+            folderPickerLauncher.launch(intent)
         } catch (e: Exception) {
             Toast.makeText(
                 requireContext(),
@@ -160,48 +163,6 @@ class FoldersFragment : Fragment() {
                 Toast.LENGTH_LONG
             ).show()
         }
-    }
-    
-    private fun showFolderSelectionDialog() {
-        val commonFolders = arrayOf(
-            "/storage/emulated/0/Pictures",
-            "/storage/emulated/0/DCIM/Camera",
-            "/storage/emulated/0/Download",
-            "/storage/emulated/0/Pictures/Screenshots",
-            "/storage/emulated/0/WhatsApp/Media/WhatsApp Images",
-            "Custom path..."
-        )
-        
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Select Folder")
-            .setItems(commonFolders) { _, which ->
-                if (which == commonFolders.size - 1) {
-                    // Custom path option
-                    showCustomPathDialog()
-                } else {
-                    val selectedPath = commonFolders[which]
-                    viewModel.addFolder(selectedPath)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-    
-    private fun showCustomPathDialog() {
-        val editText = android.widget.EditText(requireContext())
-        editText.hint = "/storage/emulated/0/YourFolder"
-        
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Enter Folder Path")
-            .setView(editText)
-            .setPositiveButton("Add") { _, _ ->
-                val path = editText.text.toString().trim()
-                if (path.isNotEmpty()) {
-                    viewModel.addFolder(path)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
     }
     
     private fun handleSelectedFolder(uri: Uri) {
