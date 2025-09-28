@@ -49,27 +49,30 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                     return@launch
                 }
                 
-                // Check if folder already exists
+                // Check if folder already exists and is active
                 val existingFolder = repository.getFolderByPath(folderPath)
-                if (existingFolder != null) {
-                    if (existingFolder.isActive) {
-                        _uiEvents.emit(UiEvent.ShowError("Folder already added"))
-                        return@launch
-                    } else {
-                        // Reactivate the existing folder
-                        val reactivatedFolder = existingFolder.copy(
-                            isActive = true,
-                            displayName = file.name // Update display name in case it changed
-                        )
-                        repository.updateFolder(reactivatedFolder)
-                        _uiEvents.emit(UiEvent.ShowMessage("Folder reactivated successfully"))
-                        
-                        // Start scanning the folder
-                        scanFolder(reactivatedFolder)
-                        return@launch
-                    }
+                if (existingFolder != null && existingFolder.isActive) {
+                    _uiEvents.emit(UiEvent.ShowError("Folder already added"))
+                    return@launch
                 }
                 
+                // If folder exists but is inactive, reactivate it
+                if (existingFolder != null && !existingFolder.isActive) {
+                    val reactivatedFolder = existingFolder.copy(
+                        isActive = true,
+                        displayName = file.name,
+                        lastScanDate = 0L,
+                        imageCount = 0
+                    )
+                    repository.updateFolder(reactivatedFolder)
+                    _uiEvents.emit(UiEvent.ShowMessage("Folder reactivated successfully"))
+                    
+                    // Start scanning the folder
+                    scanFolder(reactivatedFolder)
+                    return@launch
+                }
+                
+                // Create new folder
                 val folderEntity = FolderEntity(
                     folderPath = folderPath,
                     displayName = file.name,
