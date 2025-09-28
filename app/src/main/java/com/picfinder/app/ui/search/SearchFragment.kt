@@ -95,32 +95,38 @@ class SearchFragment : Fragment() {
     
     private fun openImage(image: ImageEntity) {
         try {
-            val file = File(image.filePath)
-            if (file.exists()) {
-                val uri = androidx.core.content.FileProvider.getUriForFile(
+            val uri = if (image.filePath.startsWith("content://")) {
+                // Already a URI, use it directly
+                Uri.parse(image.filePath)
+            } else {
+                // Traditional file path, convert to URI
+                val file = File(image.filePath)
+                if (!file.exists()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Image file not found: ${image.filePath}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return
+                }
+                androidx.core.content.FileProvider.getUriForFile(
                     requireContext(),
                     "${requireContext().packageName}.fileprovider",
                     file
                 )
-                
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "image/*")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                }
-                
-                if (intent.resolveActivity(requireContext().packageManager) != null) {
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "No app found to open images",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            }
+            
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "image/*")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            
+            if (intent.resolveActivity(requireContext().packageManager) != null) {
+                startActivity(intent)
             } else {
                 Toast.makeText(
                     requireContext(),
-                    "Image file not found: ${image.filePath}",
+                    "No app found to open images",
                     Toast.LENGTH_SHORT
                 ).show()
             }

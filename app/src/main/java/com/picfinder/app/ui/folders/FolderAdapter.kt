@@ -9,6 +9,7 @@ import com.picfinder.app.R
 import com.picfinder.app.data.database.FolderEntity
 import com.picfinder.app.databinding.ItemFolderBinding
 import java.io.File
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -37,7 +38,21 @@ class FolderAdapter(
         fun bind(folder: FolderEntity) {
             binding.apply {
                 folderName.text = folder.displayName
-                folderPath.text = folder.folderPath
+                
+                // Decode and display folder path properly
+                folderPath.text = try {
+                    if (folder.folderPath.startsWith("content://")) {
+                        URLDecoder.decode(folder.folderPath, "UTF-8")
+                            .substringAfter("primary:")
+                            .replace("/", " > ")
+                            .ifEmpty { "Selected Folder" }
+                    } else {
+                        folder.folderPath
+                    }
+                } catch (e: Exception) {
+                    folder.folderPath
+                }
+                
                 imageCount.text = root.context.getString(
                     R.string.images_count_format,
                     folder.imageCount
