@@ -56,23 +56,18 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                     return@launch
                 }
                 
-                // If folder exists but is inactive, reactivate it
+                // If folder exists but is inactive, reactivate it by updating the existing record
                 if (existingFolder != null && !existingFolder.isActive) {
-                    val reactivatedFolder = existingFolder.copy(
-                        isActive = true,
-                        displayName = file.name,
-                        lastScanDate = 0L,
-                        imageCount = 0
-                    )
+                    val reactivatedFolder = existingFolder.copy(isActive = true)
                     repository.updateFolder(reactivatedFolder)
-                    _uiEvents.emit(UiEvent.ShowMessage("Folder reactivated successfully"))
+                    _uiEvents.emit(UiEvent.ShowMessage("Folder added successfully"))
                     
                     // Start scanning the folder
                     scanFolder(reactivatedFolder)
                     return@launch
                 }
                 
-                // Create new folder
+                // Create new folder (same as original working code)
                 val folderEntity = FolderEntity(
                     folderPath = folderPath,
                     displayName = file.name,
