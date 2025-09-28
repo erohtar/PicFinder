@@ -68,7 +68,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun clearDatabase() {
         viewModelScope.launch {
             try {
+                // Delete all images
                 repository.deleteAllImages()
+                
+                // Reset folder scan information (but keep the folders themselves)
+                val folders = repository.getAllFolders()
+                for (folder in folders) {
+                    if (folder.isActive) {
+                        val resetFolder = folder.copy(
+                            lastScanDate = 0L,
+                            imageCount = 0
+                        )
+                        repository.updateFolder(resetFolder)
+                    }
+                }
+                
                 loadDatabaseStats()
                 _uiEvents.emit(UiEvent.DatabaseCleared)
                 _uiEvents.emit(UiEvent.ShowMessage("Database cleared successfully"))

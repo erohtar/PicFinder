@@ -52,8 +52,22 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                 // Check if folder already exists
                 val existingFolder = repository.getFolderByPath(folderPath)
                 if (existingFolder != null) {
-                    _uiEvents.emit(UiEvent.ShowError("Folder already added"))
-                    return@launch
+                    if (existingFolder.isActive) {
+                        _uiEvents.emit(UiEvent.ShowError("Folder already added"))
+                        return@launch
+                    } else {
+                        // Reactivate the existing folder
+                        val reactivatedFolder = existingFolder.copy(
+                            isActive = true,
+                            displayName = file.name // Update display name in case it changed
+                        )
+                        repository.updateFolder(reactivatedFolder)
+                        _uiEvents.emit(UiEvent.ShowMessage("Folder reactivated successfully"))
+                        
+                        // Start scanning the folder
+                        scanFolder(reactivatedFolder)
+                        return@launch
+                    }
                 }
                 
                 val folderEntity = FolderEntity(
