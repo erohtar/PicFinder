@@ -43,13 +43,27 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
     fun addFolder(folderPath: String) {
         viewModelScope.launch {
             try {
-                val file = File(folderPath)
-                if (!file.exists() || !file.isDirectory) {
-                    _uiEvents.emit(UiEvent.ShowError("Invalid folder path"))
-                    return@launch
+                // Handle both URI and file path formats
+                val displayName = if (folderPath.startsWith("content://")) {
+                    // Extract display name from URI
+                    try {
+                        val uri = android.net.Uri.parse(folderPath)
+                        val docId = android.provider.DocumentsContract.getTreeDocumentId(uri)
+                        docId.substringAfterLast("/").ifEmpty { "Selected Folder" }
+                    } catch (e: Exception) {
+                        "Selected Folder"
+                    }
+                } else {
+                    // Traditional file path
+                    val file = File(folderPath)
+                    if (!file.exists() || !file.isDirectory) {
+                        _uiEvents.emit(UiEvent.ShowError("Invalid folder path"))
+                        return@launch
+                    }
+                    file.name
                 }
                 
-                // Check if folder already exists and is active (ONLY change from original)
+                // Check if folder already exists and is active
                 val existingFolder = repository.getFolderByPath(folderPath)
                 if (existingFolder != null && existingFolder.isActive) {
                     _uiEvents.emit(UiEvent.ShowError("Folder already added"))
@@ -61,10 +75,10 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                     repository.deleteFolder(existingFolder)
                 }
                 
-                // Create new folder (exactly as original working code)
+                // Create new folder
                 val folderEntity = FolderEntity(
                     folderPath = folderPath,
-                    displayName = file.name,
+                    displayName = displayName,
                     lastScanDate = 0L,
                     imageCount = 0,
                     isActive = true

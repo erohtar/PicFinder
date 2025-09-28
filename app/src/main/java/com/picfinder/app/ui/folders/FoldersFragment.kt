@@ -173,17 +173,8 @@ class FoldersFragment : Fragment() {
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
             
-            // Convert URI to file path (this is a simplified approach)
-            val folderPath = getFolderPathFromUri(uri)
-            if (folderPath != null) {
-                viewModel.addFolder(folderPath)
-            } else {
-                Toast.makeText(
-                    requireContext(),
-                    "Could not access selected folder",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            // Use the URI directly instead of converting to file path
+            viewModel.addFolder(uri.toString())
         } catch (e: Exception) {
             Toast.makeText(
                 requireContext(),

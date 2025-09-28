@@ -1,7 +1,10 @@
 package com.picfinder.app.utils
 
 import android.content.Context
+import android.net.Uri
+import android.provider.DocumentsContract
 import android.util.Log
+import androidx.documentfile.provider.DocumentFile
 import com.picfinder.app.data.database.FolderEntity
 import com.picfinder.app.data.database.ImageEntity
 import com.picfinder.app.data.repository.PicFinderRepository
@@ -32,32 +35,36 @@ class ImageScanService(private val context: Context) {
                 Log.d(TAG, "Starting scan for folder: $folderPath")
                 _scanProgress.value = ScanProgress.Scanning("Initializing...", 0, 0)
                 
-                val folder = File(folderPath)
-                if (!folder.exists()) {
-                    val error = "Folder does not exist: $folderPath"
-                    Log.e(TAG, error)
-                    _scanProgress.value = ScanProgress.Error(error)
-                    return@withContext ScanResult.Error(error)
+                // Handle both URI and file path formats
+                val imageFiles = if (folderPath.startsWith("content://")) {
+                    getAllImageFilesFromUri(folderPath)
+                } else {
+                    val folder = File(folderPath)
+                    if (!folder.exists()) {
+                        val error = "Folder does not exist: $folderPath"
+                        Log.e(TAG, error)
+                        _scanProgress.value = ScanProgress.Error(error)
+                        return@withContext ScanResult.Error(error)
+                    }
+                    
+                    if (!folder.isDirectory) {
+                        val error = "Path is not a directory: $folderPath"
+                        Log.e(TAG, error)
+                        _scanProgress.value = ScanProgress.Error(error)
+                        return@withContext ScanResult.Error(error)
+                    }
+                    
+                    if (!folder.canRead()) {
+                        val error = "Cannot read folder: $folderPath"
+                        Log.e(TAG, error)
+                        _scanProgress.value = ScanProgress.Error(error)
+                        return@withContext ScanResult.Error(error)
+                    }
+                    
+                    getAllImageFiles(folder)
                 }
                 
-                if (!folder.isDirectory) {
-                    val error = "Path is not a directory: $folderPath"
-                    Log.e(TAG, error)
-                    _scanProgress.value = ScanProgress.Error(error)
-                    return@withContext ScanResult.Error(error)
-                }
-                
-                if (!folder.canRead()) {
-                    val error = "Cannot read folder: $folderPath"
-                    Log.e(TAG, error)
-                    _scanProgress.value = ScanProgress.Error(error)
-                    return@withContext ScanResult.Error(error)
-                }
-                
-                // Get all image files in the folder
-                val imageFiles = getAllImageFiles(folder)
                 val totalFiles = imageFiles.size
-                
                 Log.d(TAG, "Found $totalFiles image files in $folderPath")
                 
                 if (totalFiles == 0) {
@@ -70,17 +77,17 @@ class ImageScanService(private val context: Context) {
                 var newImagesCount = 0
                 val existingImages = repository.getImagesInFolder(folderPath).associateBy { it.filePath }
                 
-                for (imageFile in imageFiles) {
+                for (imageInfo in imageFiles) {
                     try {
                         _scanProgress.value = ScanProgress.Scanning(
-                            imageFile.name, 
+                            imageInfo.name, 
                             processedCount, 
                             totalFiles
                         )
                         
-                        val filePath = imageFile.absolutePath
-                        val lastModified = imageFile.lastModified()
-                        val fileSize = imageFile.length()
+                        val filePath = imageInfo.path
+                        val lastModified = imageInfo.lastModified
+                        val fileSize = imageInfo.size
                         
                         // Check if image already exists and hasn't been modified
                         val existingImage = existingImages[filePath]
@@ -90,14 +97,18 @@ class ImageScanService(private val context: Context) {
                         }
                         
                         // Extract text using OCR
-                        Log.d(TAG, "Extracting text from: ${imageFile.name}")
-                        val extractedText = ocrService.extractTextFromImage(filePath)
+                        Log.d(TAG, "Extracting text from: ${imageInfo.name}")
+                        val extractedText = if (folderPath.startsWith("content://")) {
+                            ocrService.extractTextFromUri(context, Uri.parse(filePath))
+                        } else {
+                            ocrService.extractTextFromImage(filePath)
+                        }
                         Log.d(TAG, "Extracted text length: ${extractedText.length} characters")
                         
                         // Create image entity
                         val imageEntity = ImageEntity(
                             filePath = filePath,
-                            fileName = imageFile.name,
+                            fileName = imageInfo.name,
                             folderPath = folderPath,
                             extractedText = extractedText,
                             lastModified = lastModified,
@@ -106,7 +117,7 @@ class ImageScanService(private val context: Context) {
                         
                         // Insert or update in database
                         repository.insertImage(imageEntity)
-                        Log.d(TAG, "Saved image to database: ${imageFile.name}")
+                        Log.d(TAG, "Saved image to database: ${imageInfo.name}")
                         
                         if (existingImage == null) {
                             newImagesCount++
@@ -121,7 +132,7 @@ class ImageScanService(private val context: Context) {
                         }
                         
                     } catch (e: Exception) {
-                        Log.e("ImageScanService", "Error processing image: ${imageFile.absolutePath}", e)
+                        Log.e("ImageScanService", "Error processing image: ${imageInfo.path}", e)
                         processedCount++
                     }
                 }
@@ -172,8 +183,15 @@ class ImageScanService(private val context: Context) {
         }
     }
     
-    private fun getAllImageFiles(folder: File): List<File> {
-        val imageFiles = mutableListOf<File>()
+    data class ImageFileInfo(
+        val name: String,
+        val path: String,
+        val lastModified: Long,
+        val size: Long
+    )
+    
+    private fun getAllImageFiles(folder: File): List<ImageFileInfo> {
+        val imageFiles = mutableListOf<ImageFileInfo>()
         
         fun scanDirectory(dir: File, depth: Int = 0) {
             try {
@@ -195,7 +213,12 @@ class ImageScanService(private val context: Context) {
                             }
                             file.isFile && OCRService.isImageFile(file.name) -> {
                                 Log.d(TAG, "Found image file: ${file.absolutePath}")
-                                imageFiles.add(file)
+                                imageFiles.add(ImageFileInfo(
+                                    name = file.name,
+                                    path = file.absolutePath,
+                                    lastModified = file.lastModified(),
+                                    size = file.length()
+                                ))
                             }
                         }
                     } catch (e: Exception) {
@@ -212,16 +235,97 @@ class ImageScanService(private val context: Context) {
         return imageFiles
     }
     
+    private fun getAllImageFilesFromUri(folderUri: String): List<ImageFileInfo> {
+        val imageFiles = mutableListOf<ImageFileInfo>()
+        
+        try {
+            val uri = Uri.parse(folderUri)
+            val documentFile = DocumentFile.fromTreeUri(context, uri)
+            
+            if (documentFile == null || !documentFile.exists()) {
+                Log.e(TAG, "Cannot access folder URI: $folderUri")
+                return imageFiles
+            }
+            
+            fun scanDocumentDirectory(docFile: DocumentFile, depth: Int = 0) {
+                try {
+                    Log.d(TAG, "Scanning document directory: ${docFile.name} (depth: $depth)")
+                    val files = docFile.listFiles()
+                    
+                    Log.d(TAG, "Found ${files.size} items in ${docFile.name}")
+                    
+                    for (file in files) {
+                        try {
+                            when {
+                                file.isDirectory && depth < 10 -> { // Prevent infinite recursion
+                                    scanDocumentDirectory(file, depth + 1)
+                                }
+                                file.isFile && file.name != null && OCRService.isImageFile(file.name!!) -> {
+                                    Log.d(TAG, "Found image file: ${file.name}")
+                                    imageFiles.add(ImageFileInfo(
+                                        name = file.name!!,
+                                        path = file.uri.toString(),
+                                        lastModified = file.lastModified(),
+                                        size = file.length()
+                                    ))
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error processing document file: ${file.name}", e)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error scanning document directory: ${docFile.name}", e)
+                }
+            }
+            
+            scanDocumentDirectory(documentFile)
+            Log.d(TAG, "Total image files found from URI: ${imageFiles.size}")
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error scanning folder URI: $folderUri", e)
+        }
+        
+        return imageFiles
+    }
+    
     suspend fun cleanupDeletedImages() {
         withContext(Dispatchers.IO) {
             try {
                 val folders = repository.getAllFolders().filter { it.isActive }
                 for (folder in folders) {
                     val imagesInDb = repository.getImagesInFolder(folder.folderPath)
-                    val existingPaths = imagesInDb.filter { File(it.filePath).exists() }.map { it.filePath }
+                    val existingPaths = if (folder.folderPath.startsWith("content://")) {
+                        // For URI-based folders, check if DocumentFile still exists
+                        imagesInDb.filter { 
+                            try {
+                                val uri = Uri.parse(it.filePath)
+                                val docFile = DocumentFile.fromSingleUri(context, uri)
+                                docFile?.exists() == true
+                            } catch (e: Exception) {
+                                false
+                            }
+                        }.map { it.filePath }
+                    } else {
+                        // For traditional file paths
+                        imagesInDb.filter { File(it.filePath).exists() }.map { it.filePath }
+                    }
                     
                     // Remove images that no longer exist
-                    val deletedImages = imagesInDb.filter { !File(it.filePath).exists() }
+                    val deletedImages = imagesInDb.filter { image ->
+                        if (folder.folderPath.startsWith("content://")) {
+                            try {
+                                val uri = Uri.parse(image.filePath)
+                                val docFile = DocumentFile.fromSingleUri(context, uri)
+                                docFile?.exists() != true
+                            } catch (e: Exception) {
+                                true // If we can't check, assume it's deleted
+                            }
+                        } else {
+                            !File(image.filePath).exists()
+                        }
+                    }
+                    
                     for (deletedImage in deletedImages) {
                         repository.deleteImage(deletedImage)
                     }
