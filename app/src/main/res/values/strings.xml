@@ -17,6 +17,7 @@
     <string name="never">Never</string>
     <string name="database_statistics">Database Statistics</string>
     <string name="images_with_text">%d images with text in database</string>
+    <string name="total_images_in_database">%d images in database</string>
     <string name="clear_database">Clear Database</string>
     <string name="permission_required">Storage permission required</string>
     <string name="grant_permission">Grant Permission</string>

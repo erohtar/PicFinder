@@ -83,8 +83,8 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.databaseStats.collect { stats ->
                 binding.databaseStatsText.text = getString(
-                    R.string.images_with_text,
-                    stats.imagesWithText
+                    R.string.total_images_in_database,
+                    stats.totalImages
                 )
             }
         }
