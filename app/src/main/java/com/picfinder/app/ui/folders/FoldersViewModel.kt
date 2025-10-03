@@ -1,6 +1,7 @@
 package com.picfinder.app.ui.folders
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.picfinder.app.data.database.FolderEntity
@@ -104,6 +105,9 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                 val result = scanService.scanFolder(folder.folderPath)
                 when (result) {
                     is ImageScanService.ScanResult.Success -> {
+                        // Update last scan timestamp
+                        updateLastScanDate()
+                        
                         _scanProgress.value = ScanProgress.Complete(
                             "Scanned ${result.processedCount} images, ${result.newImagesCount} new"
                         )
@@ -137,6 +141,14 @@ class FoldersViewModel(application: Application) : AndroidViewModel(application)
                 _uiEvents.emit(UiEvent.ShowError("Error removing folder: ${e.message}"))
             }
         }
+    }
+    
+    private fun updateLastScanDate() {
+        val sharedPrefs = getApplication<Application>().getSharedPreferences("picfinder_prefs", Context.MODE_PRIVATE)
+        val currentTime = System.currentTimeMillis()
+        sharedPrefs.edit()
+            .putLong("last_scan_date", currentTime)
+            .apply()
     }
     
     override fun onCleared() {

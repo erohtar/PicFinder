@@ -27,6 +27,23 @@
             </intent-filter>
         </activity>
         
+        <!-- Scan Activity - can be launched externally by Tasker or other apps -->
+        <activity
+            android:name=".ScanActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="com.picfinder.app.SCAN_ALL_FOLDERS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="picfinder" android:host="scan" />
+            </intent-filter>
+        </activity>
+        
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
