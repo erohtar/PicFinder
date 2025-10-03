@@ -2,6 +2,7 @@ package com.picfinder.app.data.database
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Environment
 import androidx.core.content.ContextCompat
 import androidx.room.Database
@@ -37,13 +38,20 @@ abstract class PicFinderDatabase : RoomDatabase() {
         
         private fun getDatabasePath(context: Context): String {
             return try {
-                // Check if we have write permission to external storage
-                val hasWritePermission = ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ) == PackageManager.PERMISSION_GRANTED
+                // Check if we have external storage access
+                val hasExternalStorageAccess = when {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                        Environment.isExternalStorageManager()
+                    }
+                    else -> {
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        ) == PackageManager.PERMISSION_GRANTED
+                    }
+                }
                 
-                if (hasWritePermission) {
+                if (hasExternalStorageAccess) {
                     // Create PicFinder directory in external storage if it doesn't exist
                     val picFinderDir = File(Environment.getExternalStorageDirectory(), "PicFinder")
                     if (!picFinderDir.exists()) {

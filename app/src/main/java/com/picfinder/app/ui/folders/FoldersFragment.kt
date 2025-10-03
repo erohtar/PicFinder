@@ -3,8 +3,10 @@ package com.picfinder.app.ui.folders
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -48,6 +50,21 @@ class FoldersFragment : Fragment() {
             result.data?.data?.let { uri ->
                 handleSelectedFolder(uri)
             }
+        }
+    }
+    
+    private val manageStoragePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        // Check if permission was granted after returning from settings
+        if (PermissionUtils.hasStoragePermission(requireContext())) {
+            openFolderPicker()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Storage permission is required to access folders",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
     
@@ -145,8 +162,23 @@ class FoldersFragment : Fragment() {
     }
     
     private fun requestStoragePermission() {
-        val permissions = PermissionUtils.getRequiredPermissions()
-        permissionLauncher.launch(permissions)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // For Android 11+, we need to request MANAGE_EXTERNAL_STORAGE permission
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = Uri.parse("package:${requireContext().packageName}")
+                }
+                manageStoragePermissionLauncher.launch(intent)
+            } catch (e: Exception) {
+                // Fallback to general manage all files settings
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                manageStoragePermissionLauncher.launch(intent)
+            }
+        } else {
+            // For older Android versions, use traditional permission request
+            val permissions = PermissionUtils.getRequiredPermissions()
+            permissionLauncher.launch(permissions)
+        }
     }
     
     private fun openFolderPicker() {
