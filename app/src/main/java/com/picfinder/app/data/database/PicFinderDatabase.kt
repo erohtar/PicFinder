@@ -1,7 +1,9 @@
 package com.picfinder.app.data.database
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Environment
+import androidx.core.content.ContextCompat
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -26,22 +28,38 @@ abstract class PicFinderDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     PicFinderDatabase::class.java,
-                    getDatabasePath()
+                    getDatabasePath(context)
                 ).build()
                 INSTANCE = instance
                 instance
             }
         }
         
-        private fun getDatabasePath(): String {
-            // Create PicFinder directory in external storage if it doesn't exist
-            val picFinderDir = File(Environment.getExternalStorageDirectory(), "PicFinder")
-            if (!picFinderDir.exists()) {
-                picFinderDir.mkdirs()
+        private fun getDatabasePath(context: Context): String {
+            return try {
+                // Check if we have write permission to external storage
+                val hasWritePermission = ContextCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) == PackageManager.PERMISSION_GRANTED
+                
+                if (hasWritePermission) {
+                    // Create PicFinder directory in external storage if it doesn't exist
+                    val picFinderDir = File(Environment.getExternalStorageDirectory(), "PicFinder")
+                    if (!picFinderDir.exists()) {
+                        picFinderDir.mkdirs()
+                    }
+                    
+                    // Return the full path to the database file
+                    File(picFinderDir, "picfinder_database").absolutePath
+                } else {
+                    // Use internal storage until permissions are granted
+                    "picfinder_database"
+                }
+            } catch (e: Exception) {
+                // Fallback to internal storage if external storage is not accessible
+                "picfinder_database"
             }
-            
-            // Return the full path to the database file
-            return File(picFinderDir, "picfinder_database").absolutePath
         }
     }
 }
