@@ -65,10 +65,6 @@ class FolderAdapter(
                 removeButton.setOnClickListener {
                     onRemoveClick(folder)
                 }
-
-                removeIcon.setOnClickListener {
-                    onRemoveClick(folder)
-                }
             }
         }
     }

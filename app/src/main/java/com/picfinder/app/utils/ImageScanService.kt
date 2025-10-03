@@ -157,27 +157,119 @@ class ImageScanService(private val context: Context) {
     suspend fun scanAllFolders(): ScanResult {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d(TAG, "Starting scan all folders - optimized version")
+                
+                // First, clean up deleted images to avoid processing non-existent files
+                Log.d(TAG, "Cleaning up deleted images first...")
+                cleanupDeletedImages()
+                
                 val folders = repository.getAllFolders().filter { it.isActive }
                 var totalProcessed = 0
                 var totalNew = 0
+                var totalDeleted = 0
                 
                 for (folder in folders) {
-                    val result = scanFolder(folder.folderPath)
-                    when (result) {
-                        is ScanResult.Success -> {
-                            totalProcessed += result.processedCount
-                            totalNew += result.newImagesCount
+                    Log.d(TAG, "Processing folder: ${folder.displayName}")
+                    
+                    // Get current images in database for this folder
+                    val existingImages = repository.getImagesInFolder(folder.folderPath)
+                    val existingImagePaths = existingImages.map { it.filePath }.toSet()
+                    
+                    // Get current files in the folder
+                    val currentFiles = if (folder.folderPath.startsWith("content://")) {
+                        getAllImageFilesFromUri(folder.folderPath)
+                    } else {
+                        val folderFile = File(folder.folderPath)
+                        if (!folderFile.exists() || !folderFile.isDirectory) {
+                            Log.w(TAG, "Folder no longer exists: ${folder.folderPath}")
+                            continue
                         }
-                        is ScanResult.Error -> {
-                            Log.e("ImageScanService", "Error scanning folder ${folder.folderPath}: ${result.message}")
+                        getAllImageFiles(folderFile)
+                    }
+                    
+                    val currentFilePaths = currentFiles.map { it.path }.toSet()
+                    
+                    // Find deleted files (in database but not on disk)
+                    val deletedPaths = existingImagePaths - currentFilePaths
+                    for (deletedPath in deletedPaths) {
+                        val imageToDelete = existingImages.find { it.filePath == deletedPath }
+                        if (imageToDelete != null) {
+                            repository.deleteImage(imageToDelete)
+                            totalDeleted++
+                            Log.d(TAG, "Deleted missing image: ${imageToDelete.fileName}")
                         }
                     }
+                    
+                    // Find new files (on disk but not in database) or modified files
+                    var folderProcessed = 0
+                    var folderNew = 0
+                    
+                    for (fileInfo in currentFiles) {
+                        val existingImage = existingImages.find { it.filePath == fileInfo.path }
+                        
+                        // Skip if file exists and hasn't been modified
+                        if (existingImage != null && existingImage.lastModified == fileInfo.lastModified) {
+                            folderProcessed++
+                            continue
+                        }
+                        
+                        // Process new or modified file
+                        try {
+                            _scanProgress.value = ScanProgress.Scanning(
+                                fileInfo.name, 
+                                totalProcessed + folderProcessed, 
+                                currentFiles.size
+                            )
+                            
+                            // Extract text using OCR
+                            Log.d(TAG, "Processing ${if (existingImage == null) "new" else "modified"} file: ${fileInfo.name}")
+                            val extractedText = if (folder.folderPath.startsWith("content://")) {
+                                ocrService.extractTextFromUri(context, Uri.parse(fileInfo.path))
+                            } else {
+                                ocrService.extractTextFromImage(fileInfo.path)
+                            }
+                            
+                            // Create image entity
+                            val imageEntity = ImageEntity(
+                                filePath = fileInfo.path,
+                                fileName = fileInfo.name,
+                                folderPath = folder.folderPath,
+                                extractedText = extractedText,
+                                lastModified = fileInfo.lastModified,
+                                fileSize = fileInfo.size
+                            )
+                            
+                            // Insert or update in database
+                            repository.insertImage(imageEntity)
+                            
+                            if (existingImage == null) {
+                                folderNew++
+                            }
+                            
+                            folderProcessed++
+                            
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error processing image: ${fileInfo.path}", e)
+                            folderProcessed++
+                        }
+                    }
+                    
+                    // Update folder scan information
+                    val finalCount = repository.getImageCountInFolder(folder.folderPath)
+                    repository.updateFolderScanInfo(folder.folderPath, System.currentTimeMillis(), finalCount)
+                    
+                    totalProcessed += folderProcessed
+                    totalNew += folderNew
+                    
+                    Log.d(TAG, "Folder ${folder.displayName}: processed=$folderProcessed, new=$folderNew, deleted=${deletedPaths.size}")
                 }
                 
+                Log.d(TAG, "Scan all folders complete: processed=$totalProcessed, new=$totalNew, deleted=$totalDeleted")
                 ScanResult.Success(totalProcessed, totalNew)
+                
             } catch (e: Exception) {
                 val error = "Error scanning all folders: ${e.message}"
-                Log.e("ImageScanService", error, e)
+                Log.e(TAG, error, e)
                 ScanResult.Error(error)
             }
         }
