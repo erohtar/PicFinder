@@ -38,16 +38,6 @@ class SettingsFragment : Fragment() {
     }
     
     private fun setupClickListeners() {
-        binding.scanFrequencyGroup.setOnCheckedChangeListener { _, checkedId ->
-            val frequency = when (checkedId) {
-                R.id.radio_daily -> SettingsViewModel.ScanFrequency.DAILY
-                R.id.radio_weekly -> SettingsViewModel.ScanFrequency.WEEKLY
-                R.id.radio_manual -> SettingsViewModel.ScanFrequency.MANUAL_ONLY
-                else -> SettingsViewModel.ScanFrequency.DAILY
-            }
-            viewModel.setScanFrequency(frequency)
-        }
-        
         binding.clearDatabaseButton.setOnClickListener {
             showClearDatabaseConfirmation()
         }
@@ -58,16 +48,6 @@ class SettingsFragment : Fragment() {
     }
     
     private fun observeViewModel() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.scanFrequency.collect { frequency ->
-                val radioButtonId = when (frequency) {
-                    SettingsViewModel.ScanFrequency.DAILY -> R.id.radio_daily
-                    SettingsViewModel.ScanFrequency.WEEKLY -> R.id.radio_weekly
-                    SettingsViewModel.ScanFrequency.MANUAL_ONLY -> R.id.radio_manual
-                }
-                binding.scanFrequencyGroup.check(radioButtonId)
-            }
-        }
         
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.lastScanDate.collect { timestamp ->

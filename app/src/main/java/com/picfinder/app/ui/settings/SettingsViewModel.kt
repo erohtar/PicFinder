@@ -6,7 +6,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.picfinder.app.data.repository.PicFinderRepository
 import com.picfinder.app.utils.ImageScanService
-import com.picfinder.app.utils.WorkManagerUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -15,9 +14,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val repository = PicFinderRepository(application)
     private val scanService = ImageScanService(application)
     private val sharedPrefs = application.getSharedPreferences("picfinder_prefs", Context.MODE_PRIVATE)
-    
-    private val _scanFrequency = MutableStateFlow(getScanFrequency())
-    val scanFrequency: StateFlow<ScanFrequency> = _scanFrequency.asStateFlow()
     
     private val _lastScanDate = MutableStateFlow(getLastScanDate())
     val lastScanDate: StateFlow<Long> = _lastScanDate.asStateFlow()
@@ -30,10 +26,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     
     private val _isScanning = MutableStateFlow(false)
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
-    
-    enum class ScanFrequency {
-        DAILY, WEEKLY, MANUAL_ONLY
-    }
     
     data class DatabaseStats(
         val totalImages: Int,
@@ -48,21 +40,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     
     init {
         loadDatabaseStats()
-    }
-    
-    fun setScanFrequency(frequency: ScanFrequency) {
-        _scanFrequency.value = frequency
-        sharedPrefs.edit()
-            .putString("scan_frequency", frequency.name)
-            .apply()
-        
-        // Update WorkManager scheduling
-        val workManagerFrequency = when (frequency) {
-            ScanFrequency.DAILY -> WorkManagerUtils.ScanFrequency.DAILY
-            ScanFrequency.WEEKLY -> WorkManagerUtils.ScanFrequency.WEEKLY
-            ScanFrequency.MANUAL_ONLY -> WorkManagerUtils.ScanFrequency.MANUAL_ONLY
-        }
-        WorkManagerUtils.schedulePeriodicScan(getApplication(), workManagerFrequency)
     }
     
     fun clearDatabase() {
@@ -127,15 +104,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 // Handle error silently or log it
             }
-        }
-    }
-    
-    private fun getScanFrequency(): ScanFrequency {
-        val frequencyName = sharedPrefs.getString("scan_frequency", ScanFrequency.DAILY.name)
-        return try {
-            ScanFrequency.valueOf(frequencyName ?: ScanFrequency.DAILY.name)
-        } catch (e: Exception) {
-            ScanFrequency.DAILY
         }
     }
     

@@ -32,7 +32,9 @@
             android:name=".ScanActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
-            android:launchMode="singleTask">
+            android:launchMode="singleTop"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="com.picfinder.app.SCAN_ALL_FOLDERS" />
                 <category android:name="android.intent.category.DEFAULT" />

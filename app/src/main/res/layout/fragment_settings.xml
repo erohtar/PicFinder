@@ -23,48 +23,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Scan Frequency -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/scan_frequency"
-            android:textColor="@color/text_primary_dark"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
-
-        <RadioGroup
-            android:id="@+id/scan_frequency_group"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp">
-
-            <RadioButton
-                android:id="@+id/radio_daily"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/daily"
-                android:textColor="@color/text_primary_dark"
-                android:buttonTint="@color/primary_cyan"
-                android:checked="true" />
-
-            <RadioButton
-                android:id="@+id/radio_weekly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/weekly"
-                android:textColor="@color/text_primary_dark"
-                android:buttonTint="@color/primary_cyan" />
-
-            <RadioButton
-                android:id="@+id/radio_manual"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/manual_only"
-                android:textColor="@color/text_primary_dark"
-                android:buttonTint="@color/primary_cyan" />
-
-        </RadioGroup>
-
         <!-- Last Scan -->
         <TextView
             android:layout_width="wrap_content"
