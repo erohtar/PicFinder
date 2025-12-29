@@ -103,6 +103,15 @@ The app interface matches the provided screenshots:
 4. Use "Scan All Folders Now" for immediate scanning
 5. Clear database if needed
 
+## External Integration
+
+You can trigger a scan from external applications like Tasker by sending an Intent with the following details. This is useful for creating home screen shortcuts or automating scans.
+
+- **Action**: `com.picfinder.app.SCAN_ALL_FOLDERS`
+- **Package**: `com.picfinder.app`
+- **Class**: `com.picfinder.app.ScanActivity`
+- **Target**: `Activity`
+
 ## Development
 
 ### Built With

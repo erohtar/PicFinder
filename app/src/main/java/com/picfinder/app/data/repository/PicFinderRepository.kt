@@ -17,6 +17,8 @@ class PicFinderRepository(context: Context) {
     suspend fun insertImages(images: List<ImageEntity>) = imageDao.insertImages(images)
     
     suspend fun deleteImage(image: ImageEntity) = imageDao.deleteImage(image)
+
+    suspend fun deleteImagesByPaths(paths: List<String>) = imageDao.deleteImagesByPaths(paths)
     
     suspend fun deleteImagesInFolder(folderPath: String) = imageDao.deleteImagesInFolder(folderPath)
     
@@ -78,8 +80,8 @@ class PicFinderRepository(context: Context) {
     
     suspend fun deactivateFolder(folderPath: String) = folderDao.deactivateFolder(folderPath)
     
-    suspend fun updateFolderScanInfo(folderPath: String, scanDate: Long, imageCount: Int) = 
-        folderDao.updateFolderScanInfo(folderPath, scanDate, imageCount)
+    suspend fun updateFolderScanInfo(folderPath: String, scanDate: Long, imageCount: Int, lastModified: Long) = 
+        folderDao.updateFolderScanInfo(folderPath, scanDate, imageCount, lastModified)
     
     suspend fun getFolderByPath(folderPath: String) = folderDao.getFolderByPath(folderPath)
     

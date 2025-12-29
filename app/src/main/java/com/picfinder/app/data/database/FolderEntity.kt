@@ -9,6 +9,7 @@ data class FolderEntity(
     val folderPath: String,
     val displayName: String,
     val lastScanDate: Long = 0L,
+    var lastModified: Long = 0L,
     val imageCount: Int = 0,
     val isActive: Boolean = true
 )

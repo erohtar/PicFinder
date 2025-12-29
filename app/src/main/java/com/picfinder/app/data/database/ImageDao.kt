@@ -29,6 +29,9 @@ interface ImageDao {
     
     @Delete
     suspend fun deleteImage(image: ImageEntity)
+
+    @Query("DELETE FROM images WHERE filePath IN (:paths)")
+    suspend fun deleteImagesByPaths(paths: List<String>)
     
     @Query("DELETE FROM images WHERE folderPath = :folderPath")
     suspend fun deleteImagesInFolder(folderPath: String)
