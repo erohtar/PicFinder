@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -15,12 +16,12 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SettingsFragment : Fragment() {
-    
+
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: SettingsViewModel by viewModels()
-    
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -29,26 +30,37 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         return binding.root
     }
-    
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         setupClickListeners()
         observeViewModel()
     }
-    
+
     private fun setupClickListeners() {
         binding.clearDatabaseButton.setOnClickListener {
-            showClearDatabaseConfirmation()
+            showClearDatabaseConfirmationDialog()
         }
-        
+
         binding.manualScanButton.setOnClickListener {
             viewModel.performManualScan()
         }
     }
-    
+
+    private fun showClearDatabaseConfirmationDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirm Clear Database")
+            .setMessage("Are you sure you want to clear the entire database? This will remove all scanned images and folders. This action cannot be undone.")
+            .setPositiveButton("Clear") { _, _ ->
+                viewModel.clearDatabase()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun observeViewModel() {
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.lastScanDate.collect { timestamp ->
                 binding.lastScanText.text = if (timestamp == 0L) {
@@ -59,7 +71,7 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.databaseStats.collect { stats ->
                 binding.databaseStatsText.text = getString(
@@ -68,7 +80,7 @@ class SettingsFragment : Fragment() {
                 )
             }
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.isScanning.collect { isScanning ->
                 binding.manualScanButton.isEnabled = !isScanning
@@ -79,7 +91,7 @@ class SettingsFragment : Fragment() {
                 }
             }
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiEvents.collect { event ->
                 when (event) {
@@ -96,18 +108,7 @@ class SettingsFragment : Fragment() {
             }
         }
     }
-    
-    private fun showClearDatabaseConfirmation() {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("Clear Database")
-            .setMessage("This will remove all scanned image data. Are you sure?")
-            .setPositiveButton("Clear") { _, _ ->
-                viewModel.clearDatabase()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

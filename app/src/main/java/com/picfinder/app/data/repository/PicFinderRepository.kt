@@ -76,7 +76,10 @@ class PicFinderRepository(context: Context) {
     
     suspend fun updateFolder(folder: FolderEntity) = folderDao.updateFolder(folder)
     
-    suspend fun deleteFolder(folder: FolderEntity) = folderDao.deleteFolder(folder)
+    suspend fun deleteFolder(folder: FolderEntity) {
+        deleteImagesInFolder(folder.folderPath)
+        folderDao.deleteFolder(folder)
+    }
     
     suspend fun deactivateFolder(folderPath: String) = folderDao.deactivateFolder(folderPath)
     

@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -21,13 +22,13 @@ import com.picfinder.app.utils.PermissionUtils
 import kotlinx.coroutines.launch
 
 class FoldersFragment : Fragment() {
-    
+
     private var _binding: FragmentFoldersBinding? = null
     private val binding get() = _binding!!
-    
+
     private val viewModel: FoldersViewModel by viewModels()
     private lateinit var folderAdapter: FolderAdapter
-    
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -42,7 +43,7 @@ class FoldersFragment : Fragment() {
             ).show()
         }
     }
-    
+
     private val folderPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -52,7 +53,7 @@ class FoldersFragment : Fragment() {
             }
         }
     }
-    
+
     private val manageStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { _ ->
@@ -67,7 +68,7 @@ class FoldersFragment : Fragment() {
             ).show()
         }
     }
-    
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -76,31 +77,42 @@ class FoldersFragment : Fragment() {
         _binding = FragmentFoldersBinding.inflate(inflater, container, false)
         return binding.root
     }
-    
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         setupRecyclerView()
         setupClickListeners()
         observeViewModel()
     }
-    
+
     private fun setupRecyclerView() {
         folderAdapter = FolderAdapter(
             onRescanClick = { folder ->
                 viewModel.scanFolder(folder)
             },
             onRemoveClick = { folder ->
-                viewModel.removeFolder(folder)
+                showDeleteConfirmationDialog(folder)
             }
         )
-        
+
         binding.foldersRecycler.apply {
             adapter = folderAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
     }
-    
+
+    private fun showDeleteConfirmationDialog(folder: com.picfinder.app.data.database.FolderEntity) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirm Delete")
+            .setMessage("Are you sure you want to remove this folder and all its associated data? This action cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                viewModel.removeFolder(folder)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun setupClickListeners() {
         binding.addFolderButton.setOnClickListener {
             if (PermissionUtils.hasStoragePermission(requireContext())) {
@@ -110,7 +122,7 @@ class FoldersFragment : Fragment() {
             }
         }
     }
-    
+
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.folders.collect { folders ->
@@ -118,7 +130,7 @@ class FoldersFragment : Fragment() {
                 updateEmptyState(folders.isEmpty())
             }
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiEvents.collect { event ->
                 when (event) {
@@ -131,7 +143,7 @@ class FoldersFragment : Fragment() {
                 }
             }
         }
-        
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.scanProgress.collect { progress ->
                 when (progress) {
@@ -155,12 +167,12 @@ class FoldersFragment : Fragment() {
             }
         }
     }
-    
+
     private fun updateEmptyState(isEmpty: Boolean) {
         binding.emptyStateLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.foldersRecycler.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
-    
+
     private fun requestStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // For Android 11+, we need to request MANAGE_EXTERNAL_STORAGE permission
@@ -180,7 +192,7 @@ class FoldersFragment : Fragment() {
             permissionLauncher.launch(permissions)
         }
     }
-    
+
     private fun openFolderPicker() {
         try {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
@@ -196,7 +208,7 @@ class FoldersFragment : Fragment() {
             ).show()
         }
     }
-    
+
     private fun handleSelectedFolder(uri: Uri) {
         try {
             // Take persistable permission
@@ -204,7 +216,7 @@ class FoldersFragment : Fragment() {
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-            
+
             // Use the URI directly instead of converting to file path
             viewModel.addFolder(uri.toString())
         } catch (e: Exception) {
@@ -215,7 +227,7 @@ class FoldersFragment : Fragment() {
             ).show()
         }
     }
-    
+
     private fun getFolderPathFromUri(uri: Uri): String? {
         return try {
             val docId = DocumentsContract.getTreeDocumentId(uri)
@@ -252,7 +264,7 @@ class FoldersFragment : Fragment() {
             null
         }
     }
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

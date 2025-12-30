@@ -8,34 +8,38 @@ import androidx.core.content.ContextCompat
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import java.io.File
 
 @Database(
     entities = [ImageEntity::class, FolderEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class PicFinderDatabase : RoomDatabase() {
-    
+
     abstract fun imageDao(): ImageDao
     abstract fun folderDao(): FolderDao
-    
+
     companion object {
         @Volatile
         private var INSTANCE: PicFinderDatabase? = null
-        
+
         fun getDatabase(context: Context): PicFinderDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     PicFinderDatabase::class.java,
                     getDatabasePath(context)
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }
         }
-        
+
         private fun getDatabasePath(context: Context): String {
             return try {
                 // Check if we have external storage access
@@ -50,14 +54,14 @@ abstract class PicFinderDatabase : RoomDatabase() {
                         ) == PackageManager.PERMISSION_GRANTED
                     }
                 }
-                
+
                 if (hasExternalStorageAccess) {
                     // Create PicFinder directory in external storage if it doesn't exist
                     val picFinderDir = File(Environment.getExternalStorageDirectory(), "PicFinder")
                     if (!picFinderDir.exists()) {
                         picFinderDir.mkdirs()
                     }
-                    
+
                     // Return the full path to the database file
                     File(picFinderDir, "picfinder_database").absolutePath
                 } else {
