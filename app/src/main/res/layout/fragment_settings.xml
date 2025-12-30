@@ -4,7 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_background"
     tools:context=".ui.settings.SettingsFragment">
 
     <LinearLayout
@@ -17,79 +16,83 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:text="@string/scan_settings"
-            android:textColor="@color/text_primary_dark"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface" />
 
         <!-- Last Scan -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
             android:text="@string/last_scan"
-            android:textColor="@color/text_primary_dark"
-            android:textSize="16sp"
-            android:layout_marginBottom="4dp" />
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/last_scan_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
             android:text="@string/never"
-            android:textColor="@color/text_secondary_dark"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp" />
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/scan_duration_and_image_count_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_secondary_dark"
-            android:textSize="14sp"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="24dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="Scan took 1 mins 23 secs, and added/updated 456 images" />
+            tools:text="Scan took 1 mins 23 secs, and added/updated 456 images"
+            tools:visibility="visible" />
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp" />
 
         <!-- Database Statistics Section -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:text="@string/database_statistics"
-            android:textColor="@color/text_primary_dark"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/database_stats_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/images_with_text"
-            android:textColor="@color/text_secondary_dark"
-            android:textSize="16sp"
             android:layout_marginBottom="24dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
             tools:text="2389 images with text in database" />
 
-        <!-- Clear Database Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/clear_database_button"
+        <com.google.android.material.divider.MaterialDivider
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/clear_database"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/primary_cyan"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="24dp" />
 
         <!-- Manual Scan Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/manual_scan_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Scan All Folders Now"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/primary_cyan" />
+            android:layout_marginBottom="8dp"
+            android:text="Scan All Folders Now" />
+
+        <!-- Clear Database Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clear_database_button"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/clear_database" />
 
     </LinearLayout>
 

@@ -2,27 +2,28 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.Material3.Card.OutlinedCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardBackgroundColor="@color/dark_card"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <!-- Image Thumbnail -->
         <ImageView
             android:id="@+id/image_thumbnail"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="16dp"
             android:scaleType="centerCrop"
-            android:background="@color/dark_surface"
+            android:background="?attr/colorSurfaceVariant"
             tools:src="@drawable/ic_folder" />
 
         <!-- Content -->
@@ -37,11 +38,9 @@
                 android:id="@+id/file_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_primary_dark"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:maxLines="1"
                 android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 tools:text="10_10_2017 6_53 pm Office..." />
 
             <!-- Extracted Text Preview -->
@@ -50,10 +49,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="@color/text_secondary_dark"
-                android:textSize="14sp"
-                android:maxLines="3"
                 android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="Patient Name\nAge/Gender\nDoctor\nDepartment..." />
 
             <!-- File Path -->
@@ -61,11 +60,11 @@
                 android:id="@+id/file_path"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/text_secondary_dark"
-                android:textSize="12sp"
-                android:maxLines="1"
+                android:layout_marginTop="8dp"
                 android:ellipsize="start"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="/storage/emulated/0/Pictures/Documents/" />
 
         </LinearLayout>
