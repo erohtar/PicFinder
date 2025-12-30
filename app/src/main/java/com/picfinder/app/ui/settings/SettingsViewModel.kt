@@ -10,44 +10,47 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-    
+
     private val repository = PicFinderRepository(application)
     private val scanService = ImageScanService(application)
     private val sharedPrefs = application.getSharedPreferences("picfinder_prefs", Context.MODE_PRIVATE)
-    
+
     private val _lastScanDate = MutableStateFlow(getLastScanDate())
     val lastScanDate: StateFlow<Long> = _lastScanDate.asStateFlow()
-    
+
+    private val _scanDurationAndImageCount = MutableStateFlow(getLastScanInfo())
+    val scanDurationAndImageCount: StateFlow<Triple<Int, Int, Int>?> = _scanDurationAndImageCount.asStateFlow()
+
     private val _databaseStats = MutableStateFlow(DatabaseStats(0, 0))
     val databaseStats: StateFlow<DatabaseStats> = _databaseStats.asStateFlow()
-    
+
     private val _uiEvents = MutableSharedFlow<UiEvent>()
     val uiEvents: SharedFlow<UiEvent> = _uiEvents.asSharedFlow()
-    
+
     private val _isScanning = MutableStateFlow(false)
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
-    
+
     data class DatabaseStats(
         val totalImages: Int,
         val imagesWithText: Int
     )
-    
+
     sealed class UiEvent {
         data class ShowMessage(val message: String) : UiEvent()
         data class ShowError(val message: String) : UiEvent()
         object DatabaseCleared : UiEvent()
     }
-    
+
     init {
         loadDatabaseStats()
     }
-    
+
     fun clearDatabase() {
         viewModelScope.launch {
             try {
                 // Delete all images
                 repository.deleteAllImages()
-                
+
                 // Reset folder scan information (but keep the folders themselves)
                 val folders = repository.getAllFolders()
                 for (folder in folders) {
@@ -59,7 +62,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                         repository.updateFolder(resetFolder)
                     }
                 }
-                
+
+                clearLastScanInfo()
                 loadDatabaseStats()
                 _uiEvents.emit(UiEvent.DatabaseCleared)
                 _uiEvents.emit(UiEvent.ShowMessage("Database cleared successfully"))
@@ -68,16 +72,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
-    
+
     fun performManualScan() {
         viewModelScope.launch {
             try {
                 _isScanning.value = true
+                val startTime = System.currentTimeMillis()
                 val result = scanService.scanAllFolders()
-                
+                val endTime = System.currentTimeMillis()
+                val durationInSeconds = ((endTime - startTime) / 1000).toInt()
+                val minutes = durationInSeconds / 60
+                val seconds = durationInSeconds % 60
+
                 when (result) {
                     is ImageScanService.ScanResult.Success -> {
                         updateLastScanDate()
+                        updateLastScanInfo(minutes, seconds, result.newImagesCount)
                         loadDatabaseStats()
                         _uiEvents.emit(UiEvent.ShowMessage(
                             "Scan complete: ${result.processedCount} images processed, ${result.newImagesCount} new"
@@ -94,7 +104,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
-    
+
     private fun loadDatabaseStats() {
         viewModelScope.launch {
             try {
@@ -106,11 +116,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
-    
+
     private fun getLastScanDate(): Long {
         return sharedPrefs.getLong("last_scan_date", 0L)
     }
-    
+
     private fun updateLastScanDate() {
         val currentTime = System.currentTimeMillis()
         sharedPrefs.edit()
@@ -118,7 +128,35 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             .apply()
         _lastScanDate.value = currentTime
     }
-    
+
+    private fun getLastScanInfo(): Triple<Int, Int, Int>? {
+        val minutes = sharedPrefs.getInt("last_scan_minutes", -1)
+        if (minutes == -1) {
+            return null
+        }
+        val seconds = sharedPrefs.getInt("last_scan_seconds", 0)
+        val imageCount = sharedPrefs.getInt("last_scan_image_count", 0)
+        return Triple(minutes, seconds, imageCount)
+    }
+
+    private fun updateLastScanInfo(minutes: Int, seconds: Int, imageCount: Int) {
+        sharedPrefs.edit()
+            .putInt("last_scan_minutes", minutes)
+            .putInt("last_scan_seconds", seconds)
+            .putInt("last_scan_image_count", imageCount)
+            .apply()
+        _scanDurationAndImageCount.value = Triple(minutes, seconds, imageCount)
+    }
+
+    private fun clearLastScanInfo() {
+        sharedPrefs.edit()
+            .remove("last_scan_minutes")
+            .remove("last_scan_seconds")
+            .remove("last_scan_image_count")
+            .apply()
+        _scanDurationAndImageCount.value = null
+    }
+
     override fun onCleared() {
         super.onCleared()
         scanService.close()

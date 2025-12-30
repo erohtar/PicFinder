@@ -39,7 +39,18 @@
             android:text="@string/never"
             android:textColor="@color/text_secondary_dark"
             android:textSize="14sp"
-            android:layout_marginBottom="32dp" />
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/scan_duration_and_image_count_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary_dark"
+            android:textSize="14sp"
+            android:layout_marginBottom="32dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Scan took 1 mins 23 secs, and added/updated 456 images" />
 
         <!-- Database Statistics Section -->
         <TextView

@@ -26,4 +26,5 @@
     <string name="no_results">No results found</string>
     <string name="no_text_found">No text found in image</string>
     <string name="images_count_format">%d images</string>
+    <string name="scan_duration_and_image_count">Scan took %d mins %d secs, and added/updated %d images</string>
 </resources>

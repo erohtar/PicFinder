@@ -73,6 +73,20 @@ class SettingsFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.scanDurationAndImageCount.collect { scanInfo ->
+                if (scanInfo != null && scanInfo.first != -1) {
+                    binding.scanDurationAndImageCountText.visibility = View.VISIBLE
+                    binding.scanDurationAndImageCountText.text = getString(
+                        R.string.scan_duration_and_image_count,
+                        scanInfo.first, scanInfo.second, scanInfo.third
+                    )
+                } else {
+                    binding.scanDurationAndImageCountText.visibility = View.GONE
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.databaseStats.collect { stats ->
                 binding.databaseStatsText.text = getString(
                     R.string.total_images_in_database,
