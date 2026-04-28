@@ -2,17 +2,18 @@ package com.picfinder.app.ui.settings
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.picfinder.app.data.repository.PicFinderRepository
-import com.picfinder.app.utils.ImageScanService
+import com.picfinder.app.service.FileScannerService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = PicFinderRepository(application)
-    private val scanService = ImageScanService(application)
     private val sharedPrefs = application.getSharedPreferences("picfinder_prefs", Context.MODE_PRIVATE)
 
     private val _lastScanDate = MutableStateFlow(getLastScanDate())
@@ -74,38 +75,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun performManualScan() {
+        val intent = Intent(getApplication(), FileScannerService::class.java)
+        ContextCompat.startForegroundService(getApplication(), intent)
         viewModelScope.launch {
-            try {
-                _isScanning.value = true
-                val startTime = System.currentTimeMillis()
-                val result = scanService.scanAllFolders()
-                val endTime = System.currentTimeMillis()
-                val durationInSeconds = ((endTime - startTime) / 1000).toInt()
-                val minutes = durationInSeconds / 60
-                val seconds = durationInSeconds % 60
-
-                when (result) {
-                    is ImageScanService.ScanResult.Success -> {
-                        updateLastScanDate()
-                        updateLastScanInfo(minutes, seconds, result.newImagesCount)
-                        loadDatabaseStats()
-                        _uiEvents.emit(UiEvent.ShowMessage(
-                            "Scan complete: ${result.processedCount} images processed, ${result.newImagesCount} new"
-                        ))
-                    }
-                    is ImageScanService.ScanResult.Error -> {
-                        _uiEvents.emit(UiEvent.ShowError("Scan failed: ${result.message}"))
-                    }
-                }
-            } catch (e: Exception) {
-                _uiEvents.emit(UiEvent.ShowError("Scan error: ${e.message}"))
-            } finally {
-                _isScanning.value = false
-            }
+            _uiEvents.emit(UiEvent.ShowMessage("Scan started in background"))
         }
     }
 
-    private fun loadDatabaseStats() {
+    fun loadDatabaseStats() {
         viewModelScope.launch {
             try {
                 val totalImages = repository.getTotalImageCount()
@@ -121,14 +98,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         return sharedPrefs.getLong("last_scan_date", 0L)
     }
 
-    private fun updateLastScanDate() {
-        val currentTime = System.currentTimeMillis()
-        sharedPrefs.edit()
-            .putLong("last_scan_date", currentTime)
-            .apply()
-        _lastScanDate.value = currentTime
-    }
-
     private fun getLastScanInfo(): Triple<Int, Int, Int>? {
         val minutes = sharedPrefs.getInt("last_scan_minutes", -1)
         if (minutes == -1) {
@@ -139,15 +108,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         return Triple(minutes, seconds, imageCount)
     }
 
-    private fun updateLastScanInfo(minutes: Int, seconds: Int, imageCount: Int) {
-        sharedPrefs.edit()
-            .putInt("last_scan_minutes", minutes)
-            .putInt("last_scan_seconds", seconds)
-            .putInt("last_scan_image_count", imageCount)
-            .apply()
-        _scanDurationAndImageCount.value = Triple(minutes, seconds, imageCount)
-    }
-
     private fun clearLastScanInfo() {
         sharedPrefs.edit()
             .remove("last_scan_minutes")
@@ -155,10 +115,5 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             .remove("last_scan_image_count")
             .apply()
         _scanDurationAndImageCount.value = null
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        scanService.close()
     }
 }

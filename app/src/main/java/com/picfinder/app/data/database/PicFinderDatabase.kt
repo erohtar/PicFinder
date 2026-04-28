@@ -8,7 +8,6 @@ import androidx.core.content.ContextCompat
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import java.io.File
 
@@ -33,7 +32,7 @@ abstract class PicFinderDatabase : RoomDatabase() {
                     PicFinderDatabase::class.java,
                     getDatabasePath(context)
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance
